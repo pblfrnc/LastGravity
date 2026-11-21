@@ -1,0 +1,102 @@
+{
+  "name": "lastgravity",
+  "displayName": "LastGravity",
+  "description": "Agentes de IA no VS Code: planejam, editam, rodam comandos e verificam o próprio trabalho. Claude, Gemini, OpenAI, Ollama e mais.",
+  "version": "0.5.0",
+  "publisher": "lastgravity",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "claude",
+    "gemini",
+    "ollama",
+    "openai"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "lastgravity.open",
+        "title": "LastGravity: Abrir central de controle",
+        "icon": "media/logo.svg"
+      },
+      {
+        "command": "lastgravity.newAgent",
+        "title": "LastGravity: Nova tarefa para um agente"
+      },
+      {
+        "command": "lastgravity.askAboutSelection",
+        "title": "LastGravity: Pedir ao agente sobre a seleção"
+      },
+      {
+        "command": "lastgravity.openInBrowser",
+        "title": "LastGravity: Abrir no navegador"
+      },
+      {
+        "command": "lastgravity.restart",
+        "title": "LastGravity: Reiniciar servidor"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "lastgravity.askAboutSelection",
+          "when": "editorHasSelection",
+          "group": "navigation@99"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "lastgravity.open",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "lastgravity.newAgent",
+        "key": "ctrl+alt+l",
+        "mac": "cmd+alt+l"
+      }
+    ],
+    "configuration": {
+      "title": "LastGravity",
+      "properties": {
+        "lastgravity.nodePath": {
+          "type": "string",
+          "default": "",
+          "description": "Caminho do Node.js 18+ (vazio = o runtime embutido do VS Code)."
+        },
+        "lastgravity.serverPath": {
+          "type": "string",
+          "default": "",
+          "description": "Pasta de uma instalação do LastGravity (vazio = a cópia que vem com a extensão)."
+        },
+        "lastgravity.defaultApproval": {
+          "type": "string",
+          "enum": [
+            "ask-commands",
+            "ask-all",
+            "auto"
+          ],
+          "default": "ask-commands",
+          "description": "Aprovação usada nas tarefas criadas pelo comando 'Nova tarefa'."
+        }
+      }
+    }
+  },
+  "scripts": {}
+}

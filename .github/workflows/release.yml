@@ -1,0 +1,90 @@
+name: release
+# Gera os apps para macOS, Windows e Linux e publica uma Release quando a versão do package.json muda.
+on:
+  push:
+    branches: [main]
+    paths: [package.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      exists: ${{ steps.v.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
+  build:
+    needs: version
+    if: needs.version.outputs.exists == 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: mac
+            arch: arm64
+            asset: LastGravity-mac-apple-silicon.zip
+          - os: macos-latest
+            target: mac
+            arch: x64
+            asset: LastGravity-mac-intel.zip
+          - os: windows-latest
+            target: win
+            arch: x64
+            asset: LastGravity-windows-x64.zip
+          - os: ubuntu-latest
+            target: linux
+            arch: x64
+            asset: LastGravity-linux-x64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node scripts/build-app.js ${{ matrix.target }} ${{ matrix.arch }}
+      - name: Empacotar (macOS)
+        if: matrix.target == 'mac'
+        run: ditto -c -k --sequesterRsrc --keepParent "dist/LastGravity-darwin-${{ matrix.arch }}/LastGravity.app" "${{ matrix.asset }}"
+      - name: Empacotar (Windows)
+        if: matrix.target == 'win'
+        shell: pwsh
+        run: Compress-Archive -Path "dist/LastGravity-win32-x64" -DestinationPath "${{ matrix.asset }}"
+      - name: Empacotar (Linux)
+        if: matrix.target == 'linux'
+        run: tar -C dist -czf "${{ matrix.asset }}" LastGravity-linux-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Criar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${{ needs.version.outputs.version }}
+          gh release create "v$V" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "LastGravity $V" --notes-file docs/RELEASE_NOTES.md

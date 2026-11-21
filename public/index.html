@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LastGravity</title>
+  <link rel="icon" href="logo.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="logo.svg" alt="" width="24" height="24"> LastGravity <span id="project" class="muted"></span></div>
+    <nav class="views">
+      <button data-view="editor" class="active">Editor</button>
+      <button data-view="manager">Gerenciador <span id="badge" class="badge hidden"></span></button>
+    </nav>
+    <div class="actions">
+      <button id="btn-new" class="primary">+ Novo agente</button>
+      <button id="btn-settings" title="Configurações e chaves de API">⚙</button>
+    </div>
+  </header>
+
+  <!-- EDITOR -->
+  <main id="view-editor" class="view">
+    <aside class="sidebar">
+      <div class="side-head">EXPLORADOR <button id="btn-refresh" title="Atualizar">⟳</button></div>
+      <div id="tree" class="tree"></div>
+    </aside>
+    <section class="center">
+      <div id="tabs" class="tabs"></div>
+      <div class="editor">
+        <div id="editor-host"></div>
+        <div id="editor-empty" class="empty">Abra um arquivo no explorador<br><span class="muted">ou peça algo a um agente →</span></div>
+      </div>
+      <div class="terminal">
+        <div class="side-head">TERMINAL <span id="term-status" class="muted"></span></div>
+        <pre id="term-out"></pre>
+        <form id="term-form"><span class="prompt">$</span><input id="term-in" aria-label="Comando do terminal" autocomplete="off" spellcheck="false" placeholder="comando… (↑ histórico)"></form>
+      </div>
+    </section>
+    <aside class="agent-panel">
+      <div class="side-head"><select id="panel-agent"></select></div>
+      <div id="panel-detail" class="detail"></div>
+    </aside>
+  </main>
+
+  <!-- GERENCIADOR -->
+  <main id="view-manager" class="view hidden">
+    <aside class="inbox">
+      <div class="side-head">CAIXA DE AGENTES</div>
+      <div id="inbox"></div>
+    </aside>
+    <section id="manager-detail" class="detail wide"></section>
+    <aside class="artifacts">
+      <div class="side-head">PLANO</div>
+      <div id="plan"></div>
+      <div class="side-head">ARQUIVOS ALTERADOS</div>
+      <div id="changes"></div>
+      <div class="side-head">USO</div>
+      <div id="usage" class="usage"></div>
+      <div class="side-head">PROCESSOS</div>
+      <div id="procs"></div>
+    </aside>
+  </main>
+
+  <footer id="statusbar">
+    <span id="sb-project" class="sb-item"></span>
+    <span id="sb-agents" class="sb-item"></span>
+    <span class="sb-grow"></span>
+    <span id="sb-tokens" class="sb-item"></span>
+    <span id="sb-model" class="sb-item"></span>
+    <span id="buddy-slot"></span>
+  </footer>
+
+  <!-- NOVO AGENTE -->
+  <dialog id="dlg-new">
+    <form method="dialog" id="form-new">
+      <h3>Novo agente</h3>
+      <label>O que o agente deve fazer?<textarea name="prompt" rows="5" required placeholder="Ex.: Crie uma API REST em Node com rota /produtos e testes"></textarea></label>
+      <div class="row">
+        <label>Provedor<select name="providerId" id="new-provider"></select></label>
+        <label>Modelo<span class="keybox"><input name="model" id="new-model" list="new-models" autocomplete="off"><button type="button" class="small hidden" id="new-browse" title="Explorar modelos do OpenRouter">Explorar…</button></span><datalist id="new-models"></datalist></label>
+      </div>
+      <p id="new-warn" class="warn hidden"></p>
+      <label>Aprovação
+        <select name="approval">
+          <option value="ask-commands">Pedir antes de rodar comandos (recomendado)</option>
+          <option value="ask-all">Pedir antes de qualquer alteração</option>
+          <option value="auto">Autônomo total</option>
+        </select>
+      </label>
+      <menu><button value="cancel" formnovalidate>Cancelar</button><button value="ok" class="primary">Iniciar ⏎</button></menu>
+    </form>
+  </dialog>
+
+  <!-- CONFIGURAÇÕES COM ABAS -->
+  <dialog id="dlg-settings" class="settings">
+    <div class="set-wrap">
+      <nav class="set-tabs" id="set-tabs"></nav>
+      <section class="set-body" id="set-body"></section>
+    </div>
+    <footer class="set-foot">
+      <span class="muted">🔒 As chaves ficam só neste computador (~/.lastgravity).</span>
+      <button id="set-cancel">Cancelar</button>
+      <button id="set-save" class="primary">Salvar</button>
+    </footer>
+  </dialog>
+
+  <!-- CATÁLOGO DE MODELOS (OpenRouter) -->
+  <dialog id="dlg-models" class="models-dialog">
+    <div class="mb-head">
+      <b>Modelos do OpenRouter</b>
+      <input id="mb-q" type="search" placeholder="Buscar por nome, empresa ou id (ex.: claude, qwen coder, deepseek)…" autocomplete="off" spellcheck="false">
+      <button id="mb-close" class="icon" title="Fechar">✕</button>
+    </div>
+    <div class="mb-filters">
+      <div class="seg" id="mb-price"><button data-v="all" class="on">Todos</button><button data-v="free">Grátis</button><button data-v="paid">Pagos</button></div>
+      <label class="chk" title="Modelos sem ferramentas não conseguem ler/editar arquivos nem rodar comandos — o agente não funciona com eles."><input type="checkbox" id="mb-tools" checked> Só com ferramentas 🛠</label>
+      <label class="chk"><input type="checkbox" id="mb-vision"> Aceita imagens 🖼</label>
+      <select id="mb-sort"><option value="cheap">Mais baratos</option><option value="new">Mais novos</option><option value="ctx">Mais contexto</option><option value="name">Nome</option></select>
+      <button id="mb-refresh" class="icon" title="Atualizar lista">⟳</button>
+    </div>
+    <div id="mb-list" class="mb-list"></div>
+    <div class="mb-foot"><span id="mb-count" class="muted"></span><span class="muted">Preços em US$ por milhão de tokens (entrada / saída). Modelos grátis têm limite diário de uso.</span></div>
+  </dialog>
+
+  <dialog id="dlg-diff" class="wide-dialog">
+    <div class="diff-head"><b id="diff-title"></b><button id="diff-close">Fechar</button></div>
+    <div id="diff-editor"></div>
+  </dialog>
+
+  <dialog id="dlg-info" class="wide-dialog info-dialog">
+    <div class="diff-head"><b id="info-title"></b><button id="info-close">Fechar</button></div>
+    <pre id="info-body"></pre>
+  </dialog>
+
+  <div id="toasts" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+  <script src="settings-ext.js"></script>
+  <script src="buddy.js"></script>
+  <script src="friends.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+public/vendor/
+.lastgravity/
+*.zip
+*.vsix
+.DS_Store
+*.log

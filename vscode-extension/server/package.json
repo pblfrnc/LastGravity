@@ -1,0 +1,27 @@
+{
+  "name": "lastgravity",
+  "productName": "LastGravity",
+  "version": "0.5.0",
+  "description": "LastGravity — IDE agent-first, aberta e multi-modelo (Claude, Gemini, OpenAI, Ollama, OpenRouter).",
+  "main": "electron/main.js",
+  "bin": {
+    "lastgravity": "bin/lastgravity.js"
+  },
+  "scripts": {
+    "start": "node bin/lastgravity.js",
+    "desktop": "node scripts/copy-vendor.js && electron .",
+    "build:mac": "node scripts/build-mac.js",
+    "test": "node test/smoke.js && node test/mcp-skills.js && node test/streaming.js && node test/security.js && node test/cli.js && node test/openrouter.js && node test/friends.js",
+    "build:vscode": "node scripts/build-vscode.js"
+  },
+  "devDependencies": {
+    "@electron/packager": "^19.0.0",
+    "electron": "^45.4.1",
+    "monaco-editor": "0.52.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Pablo",
+  "license": "MIT"
+}

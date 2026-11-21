@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<script>(function(){var t=new URLSearchParams(location.search).get('theme')||'dark';if(t==='system')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;})();</script>
+
+<title>Abrindo projeto…</title>
+<style>
+  :root { --bg:#0f1117; --text:#e6e8ef; --muted:#8b91a5; }
+  html, body { margin: 0; height: 100%; background: var(--bg, #0f1117); color: var(--text, #e6e8ef); font: 14px system-ui, -apple-system, sans-serif; -webkit-user-select: none; user-select: none; }
+  .drag { position: fixed; top: 0; left: 0; right: 0; height: 40px; -webkit-app-region: drag; }
+  main { height: 100%; display: grid; place-content: center; text-align: center; gap: 14px; }
+  img { width: 84px; height: 84px; margin: 0 auto; animation: float 2.4s ease-in-out infinite; }
+  @keyframes float { 50% { transform: translateY(-8px); } }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  p { margin: 0; color: #8b91a5; max-width: 460px; line-height: 1.5; }
+  #slow { display: none; color: var(--text, #e6e8ef); font-size: 13px; text-align: left; background: #3a301566; border: 1px solid #5c4a1a; border-left: 3px solid #fbbf24; border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+  /* ===== revisão de layout ===== */
+  main { padding: 0 24px; }
+  #path { font: 12px ui-monospace, Menlo, monospace; color: #8b91a5; max-width: 560px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0 auto; }
+  .bar { width: 160px; height: 3px; margin: 4px auto 0; border-radius: 3px; background: #2a2f3f; overflow: hidden; }
+  .bar::after { content: ""; display: block; width: 40%; height: 100%; border-radius: 3px; background: #c2410c; animation: slide 1.3s ease-in-out infinite; }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+  @media (prefers-reduced-motion: reduce) { img, .bar::after { animation: none; } }
+
+  [data-theme="light"] { --bg:#ffffff; --panel:#f6f7f9; --panel2:#eef0f3; --line:#e1e4e8; --text:#1d2025; --muted:#5f6672; --accent:#c2410c; --accent2:#2563eb; --accent-text:#1d4ed8; color-scheme: light; }
+  button.primary { background:#c2410c !important; color:#fff; }
+  button.primary:hover { background:#9a3412 !important; filter:none !important; }
+  [data-theme="light"] html, [data-theme="light"] body, html[data-theme="light"] body { background:var(--bg); color:var(--text); }
+</style>
+</head>
+<body>
+<div class="drag"></div>
+<main>
+  <img src="../public/icon.svg" alt="">
+  <h1 id="name">Abrindo projeto…</h1>
+  <p id="path"></p>
+  <div class="bar" role="progressbar" aria-label="Carregando"></div>
+  <p id="slow">Está demorando. Se a pasta fica em Documentos, Mesa, Downloads ou no iCloud, o macOS pode estar pedindo permissão de acesso — procure a janela de aviso (às vezes ela fica atrás desta) ou libere em Ajustes do Sistema → Privacidade e Segurança → Arquivos e Pastas.</p>
+</main>
+<script>
+  const q = new URLSearchParams(location.search);
+  document.getElementById('name').textContent = `Abrindo ${q.get('name') || 'projeto'}…`;
+  document.getElementById('path').textContent = q.get('path') || '';
+  setTimeout(() => { document.getElementById('slow').style.display = 'block'; }, 6000);
+</script>
+</body>
+</html>

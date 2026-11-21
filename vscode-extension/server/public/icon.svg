@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d1936"/><stop offset="1" stop-color="#0a0b12"/></linearGradient>
+ <linearGradient id="grid" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="0.5" stop-color="#c084fc"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+ <radialGradient id="planet" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffb37a"/><stop offset="0.45" stop-color="#ff7a45"/><stop offset="1" stop-color="#7c3aed"/></radialGradient>
+ <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ff7a45" stop-opacity="0.55"/><stop offset="1" stop-color="#ff7a45" stop-opacity="0"/></radialGradient>
+ <clipPath id="sq"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+</defs>
+<rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+<g clip-path="url(#sq)"><g transform="translate(0,-62)">
+ <path d="M904.0 640.0 Q662.0 700.0 546.0 810.0" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M851.5 692.9 Q641.9 720.2 541.4 814.6" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M708.0 731.7 Q587.0 735.1 529.0 818.0" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M512.0 745.8 Q512.0 740.5 512.0 819.2" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M316.0 731.7 Q437.0 735.1 495.0 818.0" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M172.5 692.9 Q382.1 720.2 482.6 814.6" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M120.0 640.0 Q362.0 700.0 478.0 810.0" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M172.5 587.1 Q382.1 679.8 482.6 805.4" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M316.0 548.3 Q437.0 664.9 495.0 802.0" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M512.0 534.2 Q512.0 659.5 512.0 800.8" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M708.0 548.3 Q587.0 664.9 529.0 802.0" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/><path d="M851.5 587.1 Q641.9 679.8 541.4 805.4" fill="none" stroke="url(#grid)" stroke-opacity="0.35" stroke-width="5"/>
+ <ellipse cx="512" cy="640.0" rx="414.0" ry="111.8" fill="none" stroke="url(#grid)" stroke-opacity="0.22" stroke-width="7"/><ellipse cx="512" cy="644.0" rx="359.9" ry="97.2" fill="none" stroke="url(#grid)" stroke-opacity="0.29" stroke-width="7"/><ellipse cx="512" cy="654.0" rx="307.0" ry="82.9" fill="none" stroke="url(#grid)" stroke-opacity="0.37" stroke-width="7"/><ellipse cx="512" cy="669.1" rx="255.3" ry="68.9" fill="none" stroke="url(#grid)" stroke-opacity="0.44" stroke-width="7"/><ellipse cx="512" cy="688.8" rx="205.2" ry="55.4" fill="none" stroke="url(#grid)" stroke-opacity="0.52" stroke-width="7"/><ellipse cx="512" cy="713.0" rx="157.0" ry="42.4" fill="none" stroke="url(#grid)" stroke-opacity="0.59" stroke-width="7"/><ellipse cx="512" cy="741.3" rx="111.2" ry="30.0" fill="none" stroke="url(#grid)" stroke-opacity="0.67" stroke-width="7"/><ellipse cx="512" cy="773.7" rx="68.8" ry="18.6" fill="none" stroke="url(#grid)" stroke-opacity="0.74" stroke-width="7"/><ellipse cx="512" cy="810.0" rx="34.0" ry="9.2" fill="none" stroke="url(#grid)" stroke-opacity="0.82" stroke-width="7"/>
+ <circle cx="512" cy="600" r="300" fill="url(#glow)"/>
+ <path d="M269.4 645.5 A250 64 -14 0 1 754.6 524.5" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="10"/>
+ <circle cx="512" cy="585" r="145" fill="url(#planet)"/>
+ <path d="M754.6 524.5 A250 64 -14 0 1 269.4 645.5" fill="none" stroke="#ffffff" stroke-opacity="0.92" stroke-width="12" stroke-linecap="round"/>
+ <circle cx="663.8" cy="601.2" r="24" fill="#ffffff"/>
+</g></g>
+<rect x="100" y="100" width="824" height="824" rx="185" fill="none" stroke="#ffffff1f" stroke-width="4"/>
+</svg>
