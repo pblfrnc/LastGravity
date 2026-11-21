@@ -132,6 +132,7 @@ async function watchEvents(entry, root) {
       for await (const ev of sse(res, { idleMs: 90000 })) {
         if (entry.closed) break;
         if (ev.event === 'agent') onAgent(entry, root, JSON.parse(ev.data));
+        else if (ev.event === 'friends') onFriends(entry, root, JSON.parse(ev.data));
       }
     } catch {}
     if (!entry.closed) await new Promise((r) => setTimeout(r, 2000));
@@ -150,6 +151,22 @@ function onAgent(entry, root, a) {
   n.on('click', () => {
     win.show(); win.focus();
     win.webContents.executeJavaScript(`document.querySelector('[data-view=manager]').click(); selectAgent(${JSON.stringify(a.id)});`).catch(() => {});
+  });
+  n.show();
+}
+
+// MyFriends: mensagem de outra IDE (Claude Code, Codex…) vira notificação nativa quando a janela não está em foco.
+function onFriends(entry, root, d) {
+  const { win } = entry;
+  const list = (d?.incoming || []).filter((m) => m.forUser || m.type === 'task' || m.type === 'handoff');
+  if (!list.length || win.isDestroyed() || win.isFocused()) return;
+  if (!Notification.isSupported() || config.load().notifications === false) return;
+  const m = list[list.length - 1];
+  const kind = m.type === 'task' ? 'pediu uma tarefa' : m.type === 'handoff' ? 'passou um trabalho (handoff)' : m.to ? 'mandou uma mensagem para você' : 'escreveu na sala';
+  const n = new Notification({ title: `${m.fromName} ${kind}`, subtitle: `MyFriends · ${path.basename(root)}`, body: `${m.text}${list.length > 1 ? ` (+${list.length - 1})` : ''}` });
+  n.on('click', () => {
+    win.show(); win.focus();
+    win.webContents.executeJavaScript(`window.LGFriends && window.LGFriends.open()`).catch(() => {});
   });
   n.show();
 }

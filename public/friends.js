@@ -21,6 +21,7 @@
   const css = document.createElement('style');
   css.textContent = `
 #fr-btn{position:relative;display:inline-flex;align-items:center;gap:6px}
+#fr-btn.fr-ping{animation:fr-ping 1.2s ease-out 2}@keyframes fr-ping{0%{box-shadow:0 0 0 0 var(--accent2)}100%{box-shadow:0 0 0 10px transparent}}
 #fr-btn .fr-count{background:var(--accent2);color:#fff;border-radius:9px;padding:0 6px;font-size:11px;font-weight:700}
 #fr-btn .fr-count.hidden,#fr-drawer .hidden{display:none}
 #fr-drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);z-index:950;background:var(--panel);border-left:1px solid var(--line);box-shadow:-12px 0 32px #0009;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .18s ease;color:var(--text);font-size:13px}
@@ -120,7 +121,7 @@
         <div class="fr-row" style="margin-top:6px"><button type="button" class="small" id="fr-ask">Pedir a um amigo…</button></div></div></section>
       <section class="fr-sec" data-sec="install"><h4>INSTALAR MYFRIENDS EM OUTRAS IDES</h4><div class="fr-in">
         <div id="fr-ides"></div>
-        <p class="fr-note">A skill ensina o agente de cada IDE a entrar na sala do projeto, ler mensagens entre as etapas, reservar arquivos antes de editar e compartilhar um resumo ao terminar. As outras IDEs só veem mensagens novas quando o agente delas roda um comando — não há “push” para dentro delas.</p></div></section>
+        <p class="fr-note">A skill ensina o agente de cada IDE a entrar na sala do projeto, ler mensagens entre as etapas, reservar arquivos antes de editar e compartilhar um resumo ao terminar. No Claude Code e no Codex, a instalação também liga avisos automáticos: as mensagens aparecem na IDE e como notificação do sistema, e chegam ao agente no próximo passo (o Claude Code é acordado quando chega um pedido para ele). No Codex, rode /hooks uma vez para confiar nos ganchos. No Antigravity, o agente lê as mensagens quando roda um comando.</p></div></section>
     </div>`;
   document.body.appendChild(drawer);
 
@@ -314,7 +315,7 @@
     let res;
     try { res = await api('/api/friends/install', { method: 'POST', body: { targets: ids } }); }
     catch (e) { return toast(e.message, 'error'); }
-    const lines = res.plan.map((p) => `${p.label} → ${p.dir}${p.replaces ? '  (substitui a versão instalada)' : ''}\n${p.files.map((f) => `   ${f.path}  (${f.bytes} bytes)`).join('\n')}`).join('\n\n');
+    const lines = res.plan.map((p) => `${p.label} → ${p.dir}${p.replaces ? '  (substitui a versão instalada)' : ''}\n${p.files.map((f) => `   ${f.path}  (${f.bytes} bytes)`).join('\n')}${p.hooksFile ? `\n   + avisos automáticos de mensagens (hooks) em ${p.hooksFile}` : ''}`).join('\n\n');
     openModal('Instalar MyFriends', `<p class="fr-note" style="margin:0">Estes arquivos serão gravados no seu computador. Nada sai da sua máquina.</p><pre>${esc(lines)}</pre>
       <p class="fr-note" style="margin:0">Depois, abra uma sessão nova do agente nessa IDE (ou reinicie-a) para a skill aparecer.</p>`, [
       { label: 'Cancelar' },
@@ -329,7 +330,17 @@
 
   // ---------------------------------------------------------------- tempo real
   let soon = null;
-  window.addEventListener('lg:friends', () => { clearTimeout(soon); soon = setTimeout(load, 200); });
+  window.addEventListener('lg:friends', (e) => {
+    clearTimeout(soon); soon = setTimeout(load, 200);
+    // Mensagem nova de outra IDE: aviso na tela (o app desktop também mostra a notificação do sistema).
+    const list = (e.detail?.incoming || []).filter((m) => m.forUser || m.type === 'task' || m.type === 'handoff');
+    if (!list.length) return;
+    const m = list[list.length - 1];
+    const kind = m.type === 'task' ? ' (tarefa)' : m.type === 'handoff' ? ' (handoff)' : '';
+    const txt = String(m.text || '').replace(/\s+/g, ' ');
+    window.LG?.toast?.(`📨 ${m.fromName}${kind}: ${txt.length > 140 ? `${txt.slice(0, 140)}…` : txt}${list.length > 1 ? ` (+${list.length - 1})` : ''}${F.open ? '' : ' — veja em 👥 Amigos'}`, 'info', 7000);
+    if (!F.open) { btn.classList.remove('fr-ping'); void btn.offsetWidth; btn.classList.add('fr-ping'); }
+  });
   load();
 
   window.LGFriends = { open: () => setOpen(true), close: () => setOpen(false), reload: load };

@@ -1,7 +1,7 @@
 {
   "name": "lastgravity",
   "productName": "LastGravity",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "LastGravity — IDE agent-first, aberta e multi-modelo (Claude, Gemini, OpenAI, Ollama, OpenRouter).",
   "main": "electron/main.js",
   "bin": {

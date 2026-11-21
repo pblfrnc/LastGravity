@@ -432,6 +432,13 @@ class Agent {
             results.push({ id: call.id, name: call.name, output: `Erro: ${e.message}`, isError: true });
           }
         }
+        // MyFriends: mensagens novas de outras sessões chegam junto do resultado da última ferramenta.
+        const inbox = this.friends?.inboxFor?.(this);
+        if (inbox && results.length) {
+          const last = results[results.length - 1];
+          last.output = `${typeof last.output === 'string' ? last.output : JSON.stringify(last.output)}\n\n${inbox.text}`;
+          this.add({ kind: 'info', text: `📨 MyFriends — ${inbox.summary}` });
+        }
         this.messages.push({ role: 'tool', results });
         if (step === maxSteps - 1) this.add({ kind: 'info', text: `Limite de ${maxSteps} passos atingido. Envie "continue" para seguir.` });
       }

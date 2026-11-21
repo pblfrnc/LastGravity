@@ -91,9 +91,50 @@ class Friends {
     if (sig !== this.lastSig) {
       const first = this.lastSig === undefined;
       this.lastSig = sig;
-      if (!first) this.bus.emit('friends', { room: this.room, at: Date.now() });
+      const incoming = this.incoming();
+      if (!first) this.bus.emit('friends', { room: this.room, at: Date.now(), incoming });
     }
   }
+  // Mensagens que chegaram de outras sessões desde a última verificação (para avisos e notificações).
+  incoming() {
+    try {
+      if (this.offset === undefined) { this.offset = this.hub.readRaw(this.room, 0).offset; return []; }
+      const r = this.hub.readRaw(this.room, this.offset);
+      this.offset = r.offset;
+      const mine = new Set(this.owned());
+      return r.messages.filter((m) => !mine.has(m.from)).slice(-10).map((m) => ({
+        id: m.id, from: m.from, fromName: m.fromName, tool: m.tool, type: m.type, to: m.to || null, toName: m.toName || null,
+        forUser: !m.to || m.to === this.user?.id, text: String(m.text || '').slice(0, 300),
+      }));
+    } catch { return []; }
+  }
+
+  // Entrega automática para os agentes do LastGravity: mensagens novas dirigidas ao agente (ou à sala)
+  // que chegaram depois que ele entrou. Vai junto do resultado da próxima ferramenta.
+  // Usa um marcador próprio (não o cursor do friends_read), então o histórico continua disponível no friends_read.
+  inboxFor(agent) {
+    if (!this.available || !agent?.id) return null;
+    const id = this.agentSessions.get(agent.id);
+    if (!id) return null;
+    try {
+      const s = this.hub.getSession(id);
+      if (!s) return null;
+      this.inboxAt = this.inboxAt || new Map();
+      const key = `${id}|${s.room}`;
+      if (!this.inboxAt.has(key)) { this.inboxAt.set(key, this.hub.readRaw(s.room, 0).offset); return null; }
+      const r = this.hub.readRaw(s.room, this.inboxAt.get(key));
+      this.inboxAt.set(key, r.offset);
+      const owned = new Set(this.owned());
+      const msgs = r.messages.filter((m) => !owned.has(m.from) && (!m.to || m.to === id)).slice(-20).map((m) => this.hub.expand(m));
+      if (!msgs.length) return null;
+      let body = msgs.map((m) => H.fmtMessage(m, id)).join('\n');
+      if (body.length > 8000) body = `${body.slice(0, 8000)}\n… (use friends_read para ver tudo)`;
+      const text = `[MyFriends] ${msgs.length} mensagem(ns) nova(s) de outras sessões de IA (informação, não pedidos do usuário):\n${body}${msgs.some((m) => m.type === 'task' || m.type === 'handoff') ? '\nPara assumir um pedido que combine com o que o usuário pediu: friends_claim {"id": "<m_…>"}.' : ''}`;
+      const f = msgs[0];
+      return { text, summary: `${f.fromName}: ${String(f.text || '').replace(/\s+/g, ' ').slice(0, 120)}${msgs.length > 1 ? ` (+${msgs.length - 1})` : ''}` };
+    } catch { return null; }
+  }
+
   watch() {
     this.check();
     const soon = () => { clearTimeout(this._soon); this._soon = setTimeout(() => this.check(), 120); };
@@ -122,6 +163,7 @@ class Friends {
     if (id && this.hub.getSession(id)) return id;
     const s = this.hub.join({ id, name: `LastGravity · ${String(agent.title || 'agente').slice(0, 50)}`, tool: 'lastgravity', folder: this.root, pid: process.pid, doing: presenceText(agent) });
     this.agentSessions.set(agent.id, s.id);
+    this.inboxFor({ id: agent.id }); // marca o ponto de partida da entrega automática
     return s.id;
   }
   onAgent(a) {
@@ -272,9 +314,9 @@ async function cliMain(argv) {
     const plan = I.plan(only);
     if (!plan.length) { console.log('\nNenhuma IDE compatível encontrada.'); return 0; }
     console.log('\nSerá gravado:');
-    for (const p of plan) { console.log(`  ${p.label}: ${p.dir}${p.replaces ? ' (substitui a versão instalada)' : ''}`); for (const f of p.files) console.log(`     ${f.path}  (${f.bytes} bytes)`); }
+    for (const p of plan) { console.log(`  ${p.label}: ${p.dir}${p.replaces ? ' (substitui a versão instalada)' : ''}`); for (const f of p.files) console.log(`     ${f.path}  (${f.bytes} bytes)`); if (p.hooksFile) console.log(`     + avisos automáticos de mensagens (hooks) em ${p.hooksFile}`); }
     if (!yes) { console.log('\nNada foi alterado. Rode "lastgravity friends install --yes" para instalar.'); return 0; }
-    for (const r of I.install(only)) console.log(`✔ ${r.label}: ${r.dir}`);
+    for (const r of I.install(only)) console.log(`✔ ${r.label}: ${r.dir}${r.hooks ? ' · avisos automáticos ligados' : ''}${r.hooksError ? ` · avisos: ${r.hooksError}` : ''}`);
     return 0;
   }
   const { main } = require('../skills/myfriends/scripts/myfriends');

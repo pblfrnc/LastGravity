@@ -127,8 +127,8 @@ function mfAsync(args) {
   const old = JSON.parse(fs.readFileSync(f2, 'utf8')); old.lastSeen = Date.now() - 11 * 60 * 1000; fs.writeFileSync(f2, JSON.stringify(old));
   const ids = mf(['who', '--all', '--tool', 'claude', '--json'], { json: true }).sessions.map((s) => s.id);
   assert.ok(!ids.includes(d1.id) && !ids.includes(d2.id), 'sessões mortas somem');
-  assert.ok(!fs.existsSync(f2) && !fs.existsSync(path.join(process.env.MYFRIENDS_HOME, 'sessions', `${d1.id}.json`)), 'arquivos apagados');
-  console.log('✓ limpeza de sessões mortas (pid inexistente e lastSeen > 10 min)');
+  // Desde a 1.1.1 o arquivo da sessão expirada fica guardado (sala e cursor) para retomada pelo mesmo id.
+  console.log('✓ sessões mortas saem da lista (pid inexistente e lastSeen > 10 min)');
 
   // ---------- mensagens grandes em blob + segredos ----------
   const big = `INICIO ${'x'.repeat(20000)} FIM`;
@@ -176,7 +176,7 @@ function mfAsync(args) {
 
   // ---------- servidor: rotas, SSE, skill padrão, instalação ----------
   const { startServer } = require('../src/server');
-  const { server, url } = await startServer({ root: ws, port: 0 });
+  const { server, url, friends: fr } = await startServer({ root: ws, port: 0 });
   const api = async (p, opts = {}) => {
     const rr = await fetch(url + p, { method: opts.method || 'GET', headers: { 'content-type': 'application/json', 'x-lastgravity': '1' }, body: opts.body && JSON.stringify(opts.body) });
     const j = await rr.json(); if (!rr.ok) throw Object.assign(new Error(j.error), { status: rr.status }); return j;
@@ -205,11 +205,26 @@ function mfAsync(args) {
   const sse = await fetch(url + '/api/events', { signal: ctrl.signal });
   const reader = sse.body.getReader();
   let sseText = '';
-  const gotEvent = (async () => { const dec = new TextDecoder(); for (;;) { const { value, done } = await reader.read(); if (done) return false; sseText += dec.decode(value); if (sseText.includes('event: friends')) return true; } })();
+  (async () => { const dec = new TextDecoder(); try { for (;;) { const { value, done } = await reader.read(); if (done) return; sseText += dec.decode(value); } } catch {} })();
+  const gotEvent = (async () => { for (let i = 0; i < 120; i++) { if (sseText.includes('event: friends')) return true; await sleep(50); } return false; })();
   await sleep(300);
   mf(['send', 'olá LastGravity', '--tool', 'claude']);
   assert.ok(await Promise.race([gotEvent, sleep(6000).then(() => false)]), 'evento SSE friends');
+  // O evento traz o texto das mensagens novas da sala do projeto (para o aviso e a notificação nativa).
+  hub.post(st.room, a.id, { text: 'aviso para o painel', type: 'chat' });
+  for (let i = 0; i < 60 && !/"incoming":\[[^\]]*aviso para o painel/.test(sseText); i++) await sleep(100);
+  assert.ok(/"incoming":\[[^\]]*aviso para o painel/.test(sseText), 'o evento traz a mensagem nova (aviso e notificação nativa)');
   ctrl.abort();
+  // Entrega automática para um agente do LastGravity: mensagem para ele chega junto da próxima ferramenta.
+  const fakeAgent = { id: 'agt_inboxteste1', title: 'teste de inbox', status: 'running' };
+  const agSid = fr.sessionFor(fakeAgent);
+  await sleep(20);
+  hub.post(st.room, a.id, { text: 'revisa o README pra mim?', to: agSid, type: 'task' });
+  const ib = fr.inboxFor(fakeAgent);
+  assert.ok(ib && /revisa o README/.test(ib.text) && /não pedidos do usuário/.test(ib.text) && /friends_claim/.test(ib.text), JSON.stringify(ib));
+  assert.strictEqual(fr.inboxFor(fakeAgent), null, 'entregue uma vez só');
+  fr.onAgentRemoved(fakeAgent.id);
+  console.log('✓ mensagens novas: evento com o texto (aviso/notificação) e entrega automática ao agente');
   await api('/api/friends/send', { method: 'POST', body: { text: 'oi, aqui é o usuário pelo painel', to: 'codex', type: 'task' } });
   const fromUser = mf(['read', '--tool', 'codex', '--json'], { json: true }).messages.find((m) => m.text === 'oi, aqui é o usuário pelo painel');
   assert.ok(fromUser && fromUser.type === 'task' && /Você \(LastGravity\)/.test(fromUser.fromName));
